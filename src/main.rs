@@ -1,4 +1,5 @@
 use rand::prelude::*;
+use std::time::Instant;
 use tfhe::prelude::*;
 use tfhe::{
     generate_keys, 
@@ -27,7 +28,7 @@ fn filtered_sum(data: Vec<Vec<FheUint<FheUint32Id>>>, filters: &str, filter_valu
 
     for i in 0..n {
         if i % 10 == 0 {
-            println!("Filtering row {}", i);
+            println!("Filtering row number {}/{}", i, n);
         }
 
         let f = filters.chars().nth(0).unwrap();
@@ -71,6 +72,8 @@ fn main() {
     let (client_key, server_key) = generate_keys(config);
     
     // generate data and filters
+    let t1 = Instant::now();
+    println!("Starting data generation");
     let mut data: Vec<Vec<FheUint32>> = vec![];
     for _ in 0..n {
         data.push(
@@ -82,9 +85,15 @@ fn main() {
     let zero = FheUint32::encrypt(0u32, &client_key);
 
     set_server_key(server_key);
+
+    let t2 = Instant::now();
+    println!("Starting filtered sum");
     let answer = filtered_sum(data, "<", filter_values, zero);
+    println!("Finished filtered sum");
 
     let decrypted_answer: u32 = answer.decrypt(&client_key);
 
-    print!("Finished filtered sum: {}", decrypted_answer);
+    println!("Filtered sum answer: {}", decrypted_answer);
+    println!("Data generation duration: {} ms", t1.elapsed().as_millis());
+    println!("Filtered sum duration:    {} ms", t2.elapsed().as_millis());
 }
