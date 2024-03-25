@@ -72,28 +72,29 @@ fn main() {
     let (client_key, server_key) = generate_keys(config);
     
     // generate data and filters
-    let t1 = Instant::now();
     println!("Starting data generation");
+    let t1 = Instant::now();
     let mut data: Vec<Vec<FheUint32>> = vec![];
     for _ in 0..n {
         data.push(
             (0..m).map(|_| FheUint32::encrypt(random::<u32>(), &client_key)).collect()
         );
     }
-
     let filter_values = (0..(m-1)).map(|_| FheUint32::encrypt(random::<u32>(), &client_key)).collect();
     let zero = FheUint32::encrypt(0u32, &client_key);
+    let t1_elapsed = t1.elapsed().as_millis();
 
     set_server_key(server_key);
 
-    let t2 = Instant::now();
     println!("Starting filtered sum");
+    let t2 = Instant::now();
     let answer = filtered_sum(data, "<", filter_values, zero);
+    let t2_elapsed = t2.elapsed().as_millis();
     println!("Finished filtered sum");
 
     let decrypted_answer: u32 = answer.decrypt(&client_key);
 
     println!("Filtered sum answer: {}", decrypted_answer);
-    println!("Data generation duration: {} ms", t1.elapsed().as_millis());
-    println!("Filtered sum duration:    {} ms", t2.elapsed().as_millis());
+    println!("Data generation duration: {} ms", t1_elapsed);
+    println!("Filtered sum duration:    {} ms", t2_elapsed);
 }
